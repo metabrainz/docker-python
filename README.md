@@ -1,9 +1,9 @@
-# Docker containers with Python
+# Docker images with Python
 
 ## Introduction
 
 This repository contains Docker images with different versions of Python installed. All are based on the 
-`[consul-template-base](https://hub.docker.com/r/metabrainz/consul-template-base/)`, which comes with
+[`consul-template-base`](https://hub.docker.com/r/metabrainz/consul-template-base/) image, which comes with
 [Consul Template](https://github.com/hashicorp/consul-template) and other tools like *runit* installed.
 
 ### Consul Template
