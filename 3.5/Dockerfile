@@ -25,6 +25,7 @@ RUN set -ex \
 		libssl-dev \
 		tcl-dev \
 		tk-dev \
+        	libbz2-dev \
 	' \
 	&& apt-get update \
 	&& apt-get install -y $buildDeps --no-install-recommends \
