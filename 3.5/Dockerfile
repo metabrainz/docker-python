@@ -9,9 +9,9 @@ ENV LANG C.UTF-8
 
 # Runtime dependencies
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-                       tcl \
-                       tk \
+	&& apt-get install -y --no-install-recommends \
+					   tcl \
+					   tk \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY 97FC712E4C024BBEA48A61ED3A5CA953F73C700D
@@ -19,13 +19,13 @@ ENV PYTHON_VERSION 3.5.2
 ENV PYTHON_PIP_VERSION 9.0.1
 
 RUN set -ex \
-    # Installing build dependencies
+	# Installing build dependencies
 	&& buildDeps=' \
 		build-essential \
 		libssl-dev \
 		tcl-dev \
 		tk-dev \
-        	libbz2-dev \
+		libbz2-dev \
 	' \
 	&& apt-get update \
 	&& apt-get install -y $buildDeps --no-install-recommends \
@@ -56,8 +56,8 @@ RUN if [ ! -e /usr/local/bin/pip3 ]; then : \
 		&& rm /tmp/get-pip.py \
 	; fi \
 	&& pip3 install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
-    # then we use "pip list" to ensure we don't have more than one pip version installed
-    # https://github.com/docker-library/python/pull/100
+	# then we use "pip list" to ensure we don't have more than one pip version installed
+	# https://github.com/docker-library/python/pull/100
 	&& [ "$(pip list |tac|tac| awk -F '[ ()]+' '$1 == "pip" { print $2; exit }')" = "$PYTHON_PIP_VERSION" ]
 
 # Cleanup
