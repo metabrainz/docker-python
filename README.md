@@ -22,7 +22,4 @@ To use these images simply specify `FROM metabrainz/python:<TAG>` at the beginni
 
 ## Building and deploying images
 
-Example:
-
-    $ cd 3.5
-    $ docker build -t metabrainz/python:3.5 .; docker push metabrainz/python:3.5
+Use `push.sh` script.
