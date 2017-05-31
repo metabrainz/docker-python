@@ -15,8 +15,7 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY 0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D
-ENV PYTHON_VERSION 3.6.0
-ENV PYTHON_PIP_VERSION 9.0.1
+ENV PYTHON_VERSION 3.6.1
 
 RUN set -ex \
     # Installing build dependencies
@@ -25,7 +24,7 @@ RUN set -ex \
 		libssl-dev \
 		tcl-dev \
 		tk-dev \
-        	libbz2-dev \
+		libbz2-dev \
 	' \
 	&& apt-get update \
 	&& apt-get install -y $buildDeps --no-install-recommends \
@@ -42,23 +41,15 @@ RUN wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[
 	&& tar -xJC /usr/src/python --strip-components=1 -f python.tar.xz \
 	&& rm python.tar.xz \
 	&& cd /usr/src/python \
+	&& gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)" \
 	&& ./configure \
+		--build="$gnuArch" \
 		--enable-loadable-sqlite-extensions \
 		--enable-shared \
-	&& make -j$(nproc) \
+		--without-ensurepip \
+	&& make -j "$(nproc)" \
 	&& make install \
 	&& ldconfig
-
-# Installing pip
-RUN if [ ! -e /usr/local/bin/pip3 ]; then : \
-		&& wget -O /tmp/get-pip.py 'https://bootstrap.pypa.io/get-pip.py' \
-		&& python3 /tmp/get-pip.py "pip==$PYTHON_PIP_VERSION" \
-		&& rm /tmp/get-pip.py \
-	; fi \
-	&& pip3 install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
-    # then we use "pip list" to ensure we don't have more than one pip version installed
-    # https://github.com/docker-library/python/pull/100
-	&& [ "$(pip list |tac|tac| awk -F '[ ()]+' '$1 == "pip" { print $2; exit }')" = "$PYTHON_PIP_VERSION" ]
 
 # Cleanup
 RUN find /usr/local -depth \
@@ -78,3 +69,24 @@ RUN cd /usr/local/bin \
 	&& ln -s python3 python \
 	&& ln -s python3-config python-config
 
+# Installing pip
+ENV PYTHON_PIP_VERSION 9.0.1
+RUN set -ex; \
+	\
+	wget -O get-pip.py 'https://bootstrap.pypa.io/get-pip.py'; \
+	\
+	python get-pip.py \
+		--disable-pip-version-check \
+		--no-cache-dir \
+		"pip==$PYTHON_PIP_VERSION" \
+	; \
+	pip --version; \
+	\
+	find /usr/local -depth \
+		\( \
+			\( -type d -a -name test -o -name tests \) \
+			-o \
+			\( -type f -a -name '*.pyc' -o -name '*.pyo' \) \
+		\) -exec rm -rf '{}' +; \
+
+	rm -f get-pip.py
