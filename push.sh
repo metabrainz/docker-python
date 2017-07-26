@@ -5,11 +5,12 @@
 
 for version in 2.7 3.5 3.6
 do
-	cd "$(dirname "${BASH_SOURCE[0]}")/${version}/"
+	pushd "$(dirname "${BASH_SOURCE[0]}")/${version}/"
 	echo "Building ${version}..."
 	docker build -t metabrainz/python:${version} .
 	echo "Pushing ${version}..."
 	docker push metabrainz/python:${version}
+	popd
 done
 
 echo "Done!"
