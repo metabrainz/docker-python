@@ -7,9 +7,9 @@ for version in 2.7 3.5 3.6
 do
 	pushd "$(dirname "${BASH_SOURCE[0]}")/${version}/"
 	echo "Building ${version}..."
-	docker build -t metabrainz/python:${version} .
+	docker build -t metabrainz/python:${version}-1 .
 	echo "Pushing ${version}..."
-	docker push metabrainz/python:${version}
+	docker push metabrainz/python:${version}-1
 	popd
 done
 

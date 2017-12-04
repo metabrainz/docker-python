@@ -1,4 +1,4 @@
-FROM metabrainz/consul-template-base:v0.16
+FROM metabrainz/consul-template-base:v0.18.5-2
 
 # Ensure that local Python build is preferred over whatever might come with the base image
 ENV PATH /usr/local/bin:$PATH
