@@ -33,6 +33,8 @@ RUN set -ex \
 		tcl-dev \
 		tk-dev \
 		libbz2-dev \
+		libreadline6-dev \
+		libsqlite3-dev \
 	' \
 	&& apt-get update \
 	&& apt-get install -y $buildDeps --no-install-recommends \
