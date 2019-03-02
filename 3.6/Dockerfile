@@ -1,4 +1,4 @@
-FROM metabrainz/consul-template-base:v0.19.4
+FROM metabrainz/consul-template-base:v0.16
 
 # This Dockerfile is based on
 # https://github.com/docker-library/python/blob/master/3.6/wheezy/Dockerfile
