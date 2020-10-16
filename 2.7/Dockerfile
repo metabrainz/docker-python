@@ -20,8 +20,8 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY C01E1CAD5EA2C4F0B8E3571504C367C218ADD4FF
-ENV PYTHON_VERSION 2.7.15
-ENV PYTHON_PIP_VERSION 19.0.1
+ENV PYTHON_VERSION 2.7.18
+ENV PYTHON_PIP_VERSION 20.2.3
 
 # We do this in a single RUN command so that we install the build dependencies
 # and remove them in a single layer so that we don't use as much disk space
