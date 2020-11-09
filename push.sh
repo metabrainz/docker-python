@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Build all Python images image from the currently checked out version and
 # push them it to the Docker Hub.
