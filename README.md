@@ -18,8 +18,10 @@ Configuration for it must be stored in the */etc/consul-template.conf* file. See
 ## Usage
 
 To use these images simply specify `FROM metabrainz/python:<TAG>` at the beginning of your Dockerfile.
-`<TAG>` is a version of Python that you need to use. List of available tags is at https://hub.docker.com/r/metabrainz/python/tags/.
+`<TAG>` is a *version of Python* that you need to use, followed with the *creation date* of the image;
+If an image is updated more than once in a day, then extra tags will also include the sequence number.
+See the [list of image tags available on Docker Hub|https://hub.docker.com/r/metabrainz/python/tags/].
 
 ## Building and deploying images
 
-Use `push.sh` script.
+Use [`push.sh`](push.sh) script.  The way it operates is detailed in its heading comments.
