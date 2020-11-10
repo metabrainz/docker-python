@@ -33,7 +33,7 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY 0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D
-ENV PYTHON_VERSION 3.7.2
+ENV PYTHON_VERSION 3.7.9
 
 # The list of build dependencies comes from the python-docker slim version:
 # https://github.com/docker-library/python/blob/408f7b8130/3.7/stretch/slim/Dockerfile#L29
@@ -104,7 +104,7 @@ RUN cd /usr/local/bin \
 	&& ln -s python3-config python-config
 
 # Install pip
-ENV PYTHON_PIP_VERSION 19.0.1
+ENV PYTHON_PIP_VERSION 20.2.3
 
 RUN set -ex; \
 	\

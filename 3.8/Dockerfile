@@ -33,7 +33,7 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY E3FF2839C048B25C084DEBE9B26995E310250568
-ENV PYTHON_VERSION 3.8.1
+ENV PYTHON_VERSION 3.8.6
 
 # The list of build dependencies comes from the python-docker slim version:
 # https://github.com/docker-library/python/blob/32b69d61f6/3.8/buster/slim/Dockerfile#L29
@@ -106,7 +106,7 @@ RUN cd /usr/local/bin \
 	&& ln -s python3-config python-config
 
 # Install pip
-ENV PYTHON_PIP_VERSION 19.3.1
+ENV PYTHON_PIP_VERSION 20.2.3
 # https://github.com/pypa/get-pip
 ENV PYTHON_GET_PIP_URL https://github.com/pypa/get-pip/raw/ffe826207a010164265d9cc807978e3604d18ca0/get-pip.py
 ENV PYTHON_GET_PIP_SHA256 b86f36cc4345ae87bfd4f10ef6b2dbfa7a872fbff70608a1e43944d283fd0eee
