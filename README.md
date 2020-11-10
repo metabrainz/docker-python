@@ -13,7 +13,7 @@ need to use Consul Template, that service needs to be removed explicitly in the 
 writing.
 
 Configuration for it must be stored in the */etc/consul-template.conf* file. See its
-[documentation](ttps://github.com/hashicorp/consul-template) for setup details.
+[documentation](https://github.com/hashicorp/consul-template) for setup details.
 
 ## Usage
 
