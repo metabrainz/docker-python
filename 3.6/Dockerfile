@@ -85,7 +85,6 @@ RUN set -ex \
 			\( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
 		\) -exec rm -rf '{}' + \
 	&& rm -rf /usr/src/python \
-
 	\
 	&& apt-get purge -y --auto-remove $buildDeps \
 	&& rm -rf /var/lib/apt/lists/* \
