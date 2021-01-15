@@ -1,4 +1,4 @@
-FROM metabrainz/consul-template-base:v0.16
+FROM metabrainz/consul-template-base:v0.18.5-2
 
 # This Dockerfile is based on
 # https://github.com/docker-library/python/blob/32b69d61f6/3.8/buster/Dockerfile
