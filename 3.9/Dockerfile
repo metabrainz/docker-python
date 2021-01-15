@@ -36,7 +36,7 @@ ENV GPG_KEY E3FF2839C048B25C084DEBE9B26995E310250568
 ENV PYTHON_VERSION 3.9.1
 
 # The list of build dependencies comes from the python-docker slim version:
-# https://github.com/docker-library/python/blob/32b69d61f6/3.8/buster/slim/Dockerfile#L29
+# https://github.com/docker-library/python/blob/393ba9b3/3.9/buster/slim/Dockerfile#L33
 RUN set -ex \
 	&& buildDeps=' \
 		build-essential \
