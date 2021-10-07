@@ -35,12 +35,13 @@ Use [`push.sh`](push.sh) script.  The way it operates is detailed in its heading
 
 We have these images available:
 
-image version | python version | consul-template version
-----|----|----
-2.7-20201201 | 2.7.18 | 0.16
-2.7, 2.7-20210115 | 2.7.18 | 0.18
-3.7-20201201 | 3.7.9 | 0.16
-3.7, 3.7-20210115 | 3.7.9 | 0.18
-3.8-20201201 | 3.8.6 | 0.16
-3.8, 3.8-20210115 | 3.8.6 | 0.18
-3.9, 3.9-20210514 | 3.9.5 | 0.18
+image version | python version | consul-template version | ubuntu version
+----|----|----|----
+2.7-20201201 | 2.7.18 | 0.16 | bionic
+2.7, 2.7-20210115 | 2.7.18 | 0.18 | bionic
+3.7-20201201 | 3.7.9 | 0.16 | bionic
+3.7, 3.7-20210115 | 3.7.9 | 0.18 | bionic
+3.8-20201201 | 3.8.6 | 0.16 | bionic
+3.8, 3.8-20210115 | 3.8.6 | 0.18 | bionic
+3.9, 3.9-20210514 | 3.9.5 | 0.18 | bionic
+3.9-focal-20211007 | 3.9.7 | 0.27.1 | focal
