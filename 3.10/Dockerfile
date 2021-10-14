@@ -1,7 +1,7 @@
 FROM metabrainz/consul-template-base:focal-1.1.0_ct_0.27.1
 
 # This Dockerfile is based on
-# https://github.com/docker-library/python/blob/393ba9b3/3.9/buster/Dockerfile
+# https://github.com/docker-library/python/blob/652ed14d33da62558f336047bf0f6ea45addb596/3.10/bullseye/slim/Dockerfile
 
 # Ensure that local Python build is preferred over whatever might come with the base image
 ENV PATH /usr/local/bin:$PATH
@@ -10,12 +10,43 @@ ENV PATH /usr/local/bin:$PATH
 # > At the moment, setting "LANG=C" on a Linux system *fundamentally breaks Python 3*, and that's not OK.
 ENV LANG C.UTF-8
 
+# runtime dependencies
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		ca-certificates \
+		netbase \
+		tzdata \
+	; \
+	rm -rf /var/lib/apt/lists/*
+
 ENV GPG_KEY A035C8C19219BA821ECEA86B64E628F8D684696D
 ENV PYTHON_VERSION 3.10.0
 
-# The list of build dependencies comes from the python-docker slim version:
-# https://github.com/docker-library/python/blob/393ba9b3/3.9/buster/slim/Dockerfile#L33
 RUN set -ex \
+	\
+	&& savedAptMark="$(apt-mark showmanual)" \
+	&& apt-get update && apt-get install -y --no-install-recommends \
+		dpkg-dev \
+		gcc \
+		libbluetooth-dev \
+		libbz2-dev \
+		libc6-dev \
+		libexpat1-dev \
+		libffi-dev \
+		libgdbm-dev \
+		liblzma-dev \
+		libncursesw5-dev \
+		libreadline-dev \
+		libsqlite3-dev \
+		libssl-dev \
+		make \
+		tk-dev \
+		uuid-dev \
+		wget \
+		xz-utils \
+		zlib1g-dev \
+		$(command -v gpg > /dev/null || echo 'gnupg dirmngr') \
 	\
 	&& wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz" \
 	&& wget -O python.tar.xz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc" \
@@ -40,6 +71,7 @@ RUN set -ex \
 		--with-system-ffi \
 		--without-ensurepip \
 	&& make -j "$(nproc)" \
+		LDFLAGS="-Wl,--strip-all" \
 	&& make install \
 	&& rm -rf /usr/src/python \
 	\
@@ -50,6 +82,18 @@ RUN set -ex \
 		\) -exec rm -rf '{}' + \
 	\
 	&& ldconfig \
+	\
+	&& apt-mark auto '.*' > /dev/null \
+	&& apt-mark manual $savedAptMark \
+	&& find /usr/local -type f -executable -not \( -name '*tkinter*' \) -exec ldd '{}' ';' \
+		| awk '/=>/ { print $(NF-1) }' \
+		| sort -u \
+		| xargs -r dpkg-query --search \
+		| cut -d: -f1 \
+		| sort -u \
+		| xargs -r apt-mark manual \
+	&& apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+	&& rm -rf /var/lib/apt/lists/* \
 	\
 	&& python3 --version
 
@@ -71,8 +115,17 @@ ENV PYTHON_GET_PIP_SHA256 4ab6a1231fdce46e230d55947f6207c39e792d895da9197c2fec41
 
 RUN set -ex; \
 	\
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends wget; \
+	\
 	wget -O get-pip.py "$PYTHON_GET_PIP_URL"; \
 	echo "$PYTHON_GET_PIP_SHA256 *get-pip.py" | sha256sum --check --strict -; \
+	\
+	apt-mark auto '.*' > /dev/null; \
+	[ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	rm -rf /var/lib/apt/lists/*; \
 	\
 	python get-pip.py \
 		--disable-pip-version-check \
