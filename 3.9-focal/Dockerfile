@@ -1,14 +1,7 @@
-FROM metabrainz/consul-template-base:v0.18.5-2
+FROM metabrainz/consul-template-base:focal-1.1.0_ct_0.27.1
 
 # This Dockerfile is based on
 # https://github.com/docker-library/python/blob/393ba9b3/3.9/buster/Dockerfile
-
-# remove expired let's encrypt certificate and install new ones
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt \
-    && update-ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
 
 # Ensure that local Python build is preferred over whatever might come with the base image
 ENV PATH /usr/local/bin:$PATH
@@ -23,17 +16,16 @@ ENV LANG C.UTF-8
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
                        ca-certificates \
-                       gnupg-curl \
                        netbase \
                        libbz2-1.0 \
                        libexpat1 \
-                       libffi6 \
-                       libgdbm3 \
+                       libffi7 \
+                       libgdbm6 \
                        liblzma5 \
                        libncursesw5 \
-                       libreadline6 \
+                       libreadline8 \
                        libsqlite3-0 \
-                       libssl1.0.0 \
+                       libssl1.1 \
                        libuuid1 \
                        tcl \
                        tk \
