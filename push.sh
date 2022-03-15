@@ -30,7 +30,7 @@ remote_tags=($(wget -q \
 	https://registry.hub.docker.com/v1/repositories/${image_name}/tags \
 	-O - | jq -r '.[] | .name'))
 
-for version in 2.7 3.7 3.8 3.9 '3.9-focal'
+for version in 2.7 3.7 3.8 3.9 '3.9-focal' 3.10
 do
 	pushd "$(dirname "${BASH_SOURCE[0]}")/${version}/"
 	echo "Building ${version}..."
