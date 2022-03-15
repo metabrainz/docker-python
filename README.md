@@ -43,5 +43,5 @@ image version | python version | consul-template version | ubuntu version
 3.7, 3.7-20210115 | 3.7.9 | 0.18 | bionic
 3.8-20201201 | 3.8.6 | 0.16 | bionic
 3.8, 3.8-20210115 | 3.8.6 | 0.18 | bionic
-3.9, 3.9-20210514 | 3.9.5 | 0.18 | bionic
-3.9-focal-20211007 | 3.9.7 | 0.27.1 | focal
+3.9, 3.9-20220315 | 3.9.10 | 0.18 | bionic
+3.9-focal, 3.9-focal-20220315 | 3.9.10 | 0.27.1 | focal
