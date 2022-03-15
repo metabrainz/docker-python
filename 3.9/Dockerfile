@@ -3,6 +3,13 @@ FROM metabrainz/consul-template-base:v0.18.5-2
 # This Dockerfile is based on
 # https://github.com/docker-library/python/blob/393ba9b3/3.9/buster/Dockerfile
 
+# remove expired let's encrypt certificate and install new ones
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 # Ensure that local Python build is preferred over whatever might come with the base image
 ENV PATH /usr/local/bin:$PATH
 
@@ -16,6 +23,7 @@ ENV LANG C.UTF-8
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
                        ca-certificates \
+                       gnupg-curl \
                        netbase \
                        libbz2-1.0 \
                        libexpat1 \
@@ -33,7 +41,7 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY E3FF2839C048B25C084DEBE9B26995E310250568
-ENV PYTHON_VERSION 3.9.5
+ENV PYTHON_VERSION 3.9.10
 
 # The list of build dependencies comes from the python-docker slim version:
 # https://github.com/docker-library/python/blob/393ba9b3/3.9/buster/slim/Dockerfile#L33
@@ -61,7 +69,7 @@ RUN set -ex \
 	&& wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz" \
 	&& wget -O python.tar.xz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc" \
 	&& export GNUPGHOME="$(mktemp -d)" \
-	&& gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$GPG_KEY" \
+	&& gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys "$GPG_KEY" \
 	&& gpg --batch --verify python.tar.xz.asc python.tar.xz \
 	&& { command -v gpgconf > /dev/null && gpgconf --kill all || :; } \
 	&& rm -rf "$GNUPGHOME" python.tar.xz.asc \
@@ -104,7 +112,7 @@ RUN cd /usr/local/bin \
 
 # Install pip
 # if this is called "PIP_VERSION", pip explodes with "ValueError: invalid truth value '<VERSION>'"
-ENV PYTHON_PIP_VERSION 20.3.3
+ENV PYTHON_PIP_VERSION 22.0.4
 # https://github.com/pypa/get-pip
 ENV PYTHON_GET_PIP_URL https://github.com/pypa/get-pip/raw/39356a9d34700a468cf847867ac1a3bd72cc5e45/get-pip.py
 ENV PYTHON_GET_PIP_SHA256 ec367c5c9b82fa13c04cfabb0a069e84496d5c36714f14d19b5f24d519d3ba25
