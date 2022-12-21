@@ -27,8 +27,8 @@ done
 
 # shellcheck disable=SC2207
 remote_tags=($(wget -q \
-	https://registry.hub.docker.com/v1/repositories/${image_name}/tags \
-	-O - | jq -r '.[] | .name'))
+	https://registry.hub.docker.com/v2/repositories/${image_name}/tags?page_size=100 \
+	-O - | jq -r '.results[] | .name'))
 
 for version in 2.7 3.7 3.8 3.9 '3.9-focal' 3.10
 do
