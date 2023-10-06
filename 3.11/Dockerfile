@@ -1,4 +1,4 @@
-FROM metabrainz/consul-template-base:focal-1.1.0_ct_0.27.1
+FROM metabrainz/consul-template-base:ct_0.33.0-jammy-1.0.1-v0.4-1
 
 # This Dockerfile is based on
 # https://github.com/docker-library/python/blob/f5b7b5a332bd4d2c1518325ab9647b09bf07412f/3.11/bullseye/Dockerfile
@@ -25,7 +25,7 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY A035C8C19219BA821ECEA86B64E628F8D684696D
-ENV PYTHON_VERSION 3.11.1
+ENV PYTHON_VERSION 3.11.6
 
 RUN set -eux; \
 	\
@@ -121,12 +121,12 @@ RUN set -eux; \
 	done
 
 # if this is called "PIP_VERSION", pip explodes with "ValueError: invalid truth value '<VERSION>'"
-ENV PYTHON_PIP_VERSION 22.3.1
+ENV PYTHON_PIP_VERSION 23.2.1
 # https://github.com/docker-library/python/issues/365
-ENV PYTHON_SETUPTOOLS_VERSION 65.5.0
+ENV PYTHON_SETUPTOOLS_VERSION 68.2.2
 # https://github.com/pypa/get-pip
-ENV PYTHON_GET_PIP_URL https://github.com/pypa/get-pip/raw/66030fa03382b4914d4c4d0896961a0bdeeeb274/public/get-pip.py
-ENV PYTHON_GET_PIP_SHA256 1e501cf004eac1b7eb1f97266d28f995ae835d30250bec7f8850562703067dc6
+ENV PYTHON_GET_PIP_URL https://github.com/pypa/get-pip/raw/9af82b715db434abb94a0a6f3569f43e72157346/public/get-pip.py
+ENV PYTHON_GET_PIP_SHA256 45a2bb8bf2bb5eff16fdd00faef6f29731831c7c59bd9fc2bf1f3bed511ff1fe
 
 RUN set -eux; \
 	\
