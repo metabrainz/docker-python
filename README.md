@@ -37,9 +37,7 @@ We have these images available:
 
 image version | python version | consul-template version | ubuntu version
 ----|----|----|----
-2.7-20201201 | 2.7.18 | 0.16 | bionic
-2.7, 2.7-20210115 | 2.7.18 | 0.18 | bionic
-2.7-20220421 | 2.7.18 | 0.27.1 | focal
+2.7, 2.7-20220421 | 2.7.18 | 0.27.1 | focal
 3.8-20201201 | 3.8.6 | 0.16 | bionic
 3.8, 3.8-20210115 | 3.8.6 | 0.18 | bionic
 3.9, 3.9-20220315 | 3.9.10 | 0.18 | bionic
