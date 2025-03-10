@@ -43,3 +43,4 @@ image version | python version | consul-template version | ubuntu version
 3.11, 3.11-20221221 | 3.11.1 | 0.27.1 | focal
 3.11-20231006 | 3.11.6 | 0.33.0 | jammy
 3.12-20241130 | 3.12.7 | 0.39.1 | jammy
+3.13-20240310 | 3.13.2 | 0.40.0 | noble
