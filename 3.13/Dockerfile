@@ -124,6 +124,7 @@ RUN set -eux; \
 		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
 		| sort -u \
 		| xargs -r dpkg-query --search \
+		| awk '!/^diversion by/ { print } /^diversion by/ { gsub("^diversion by ", ""); gsub(" from:.*$| to:.*$", ""); print }' \
 		| cut -d: -f1 \
 		| sort -u \
 		| xargs -r apt-mark manual \
