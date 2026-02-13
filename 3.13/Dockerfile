@@ -4,7 +4,7 @@ FROM metabrainz/consul-template-base:noble-1.0.0-v0.1-1
 # https://github.com/docker-library/python/blob/3fae0a14ac171f46e47d7ce41567e40524af5bcc/3.13/slim-bookworm/Dockerfile
 
 # ensure local python is preferred over distribution python
-ENV PATH /usr/local/bin:$PATH
+ENV PATH=/usr/local/bin:$PATH
 
 # runtime dependencies
 RUN set -eux; \
@@ -16,9 +16,9 @@ RUN set -eux; \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
-ENV GPG_KEY 7169605F62C751356D054A26A821E680E5FA6305
-ENV PYTHON_VERSION 3.13.5
-ENV PYTHON_SHA256 93e583f243454e6e9e4588ca2c2662206ad961659863277afcdb96801647d640
+ENV GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305
+ENV PYTHON_VERSION=3.13.5
+ENV PYTHON_SHA256=93e583f243454e6e9e4588ca2c2662206ad961659863277afcdb96801647d640
 
 RUN set -eux; \
 	\
