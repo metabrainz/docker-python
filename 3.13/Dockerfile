@@ -1,4 +1,4 @@
-FROM metabrainz/consul-template-base:noble-1.0.0-v0.1-1
+FROM metabrainz/consul-template-base:noble-1.0.2-v0.1-1
 
 # This Dockerfile is based on
 # https://github.com/docker-library/python/blob/3fae0a14ac171f46e47d7ce41567e40524af5bcc/3.13/slim-bookworm/Dockerfile
