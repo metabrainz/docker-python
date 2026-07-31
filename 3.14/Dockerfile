@@ -1,4 +1,4 @@
-FROM metabrainz/consul-template-base:noble-1.0.2-v0.3-1
+FROM metabrainz/consul-template-base:noble-1.0.2-v0.3-2
 
 # This Dockerfile is based on
 # https://github.com/docker-library/python/blob/078b07840dfee55993c57dada1e5cf99ebd16dce/3.14/slim-trixie/Dockerfile
