@@ -1,7 +1,7 @@
 FROM metabrainz/consul-template-base:noble-1.0.2-v0.3-2
 
 # This Dockerfile is based on
-# https://github.com/docker-library/python/blob/078b07840dfee55993c57dada1e5cf99ebd16dce/3.14/slim-trixie/Dockerfile
+# https://github.com/docker-library/python/blob/7914d06b7ddb34b99975318016ab5b9c18264015/3.14/slim-trixie/Dockerfile
 
 # ensure local python is preferred over distribution python
 ENV PATH=/usr/local/bin:$PATH
@@ -16,8 +16,8 @@ RUN set -eux; \
 	; \
 	apt-get dist-clean
 
-ENV PYTHON_VERSION=3.14.5
-ENV PYTHON_SHA256=7e32597b99e5d9a39abed35de4693fa169df3e5850d4c334337ffd6a19a36db6
+ENV PYTHON_VERSION=3.14.6
+ENV PYTHON_SHA256=143b1dddefaec3bd2e21e3b839b34a2b7fb9842272883c576420d605e9f30c63
 
 RUN set -eux; \
 	\
