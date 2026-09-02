@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+#
+# Build Docker images for a specific Python version;
+#
+# This script is purposed for maintainers only, not contributors.
+#
+# Usage:
+#   $ ./build.sh 3.14
+
+set -e -o pipefail -u
+
+SCRIPT_NAME=$(basename "$0")
+HELP=$(cat <<EOH
+Usage: $SCRIPT_NAME [--help|--local-platform] <python-version>
+
+Options:
+  --help                Print this help message
+
+  --amd-only            Build image for amd platform only.
+                        This is useful for python version where base image
+                        is built for amd64 only.
+
+  --local-platform      Build image to run on the host platform only.
+                        This is intended for local development and testing,
+                        to skip building images for unnecessary targets.
+
+                        Do not use it to build image for a public repository.
+
+  Notes:
+    For multi-platform builds, there are some prerequisites to the host; see:
+    https://docs.docker.com/build/building/multi-platform/
+EOH
+)
+
+# Set default platform to build
+platform_option='--platform linux/arm64,linux/amd64'
+
+for arg in "$@"
+do
+  case $arg in
+    "--amd-only")
+      platform_option='--platform linux/amd64'
+      shift 1
+      ;;
+    "--help")
+      echo "$HELP"
+      exit 0 # EX_OK
+      shift 1
+      ;;
+    "--local-platform")
+      platform_option=''
+      shift 1
+      ;;
+    *)
+      version="$1"
+      shift 1
+      ;;
+ esac
+done
+
+if [[ ! -d ${version} ]];then
+  echo "${version} is not a valid version"
+  exit 60 # EX_PY_VERSION
+fi
+
+image_name='metabrainz/python'
+
+DOCKER_CMD=${DOCKER_CMD:-docker}
+
+for cmd in grep jq sed wget
+do
+	if ! type "${cmd}" &>/dev/null
+	then
+		echo >&2 "Error: ${cmd}: command not found"
+		exit 69 # EX_UNAVAILABLE
+	fi
+done
+
+# shellcheck disable=SC2207
+remote_tags=($(wget -q \
+	https://registry.hub.docker.com/v2/repositories/${image_name}/tags?page_size=100 \
+	-O - | jq -r '.results[] | .name'))
+
+
+pushd "$(dirname "${BASH_SOURCE[0]}")/${version}/"
+echo "Building ${version}..."
+${DOCKER_CMD} buildx build ${platform_option} -t ${image_name}:${version} .
+created=$(${DOCKER_CMD} inspect -f '{{.Created}}' ${image_name}:${version} \
+  | sed 's/^\(....\)-\(..\)-\(..\)T.*$/\1\2\3/')
+date_version=${version}-${created}
+if [[ " ${remote_tags[*]} " == *" ${date_version} "* ]]
+then
+  tags_count=$(printf '%s\n' "${remote_tags[@]}" | grep -c -F "${date_version}")
+  if [[ ${tags_count} -eq 1 ]]
+  then
+    backup_version=${date_version}.0
+    echo "Backing up previous ${date_version} as ${backup_version}..."
+    if [[ " ${remote_tags[*]} " == *" ${backup_version} "* ]]
+    then
+      echo >&2 "Error: Backup tag ${backup_version} already exists"
+      exit 70 # EX_SOFTWARE
+    fi
+    ${DOCKER_CMD} pull "${image_name}:${date_version}"
+    ${DOCKER_CMD} tag "${image_name}:${date_version}" "${image_name}:${backup_version}"
+    ${DOCKER_CMD} push "${image_name}:${backup_version}"
+    remote_tags+=("${backup_version}")
+  fi
+  sequence=$(printf '%s\n' "${remote_tags[@]}" | grep -c -F "${date_version}.")
+  sequence_version=${version}-${created}.${sequence}
+  if [[ " ${remote_tags[*]} " == *" ${sequence_version} "* ]]
+  then
+    echo >&2 "Error: Sequence tag ${sequence_version} already exists"
+    exit 70 # EX_SOFTWARE
+  fi
+  ${DOCKER_CMD} tag "${image_name}:${version}" "${image_name}:${sequence_version}"
+fi
+${DOCKER_CMD} tag "${image_name}:${version}" "${image_name}:${date_version}"
+popd
+
+echo "Done!"

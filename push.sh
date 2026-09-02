@@ -30,11 +30,15 @@ remote_tags=($(wget -q \
 	https://registry.hub.docker.com/v2/repositories/${image_name}/tags?page_size=100 \
 	-O - | jq -r '.results[] | .name'))
 
+declare -A build_args=()
+build_args["3.10"]='--amd-only'
+build_args["3.11"]='--amd-only'
+build_args["3.12"]='--amd-only'
+
 for version in 3.10 3.11 3.12 3.13 3.14
 do
-	pushd "$(dirname "${BASH_SOURCE[0]}")/${version}/"
 	echo "Building ${version}..."
-	${DOCKER_CMD} build -t ${image_name}:${version} .
+  ./build.sh ${version} "${build_args[$version]}"
 	created=$(${DOCKER_CMD} inspect -f '{{.Created}}' ${image_name}:${version} \
 		| sed 's/^\(....\)-\(..\)-\(..\)T.*$/\1\2\3/')
 	date_version=${version}-${created}
@@ -71,7 +75,6 @@ do
 	${DOCKER_CMD} push "${image_name}:${date_version}"
 	echo "Pushing ${version}..."
 	${DOCKER_CMD} push ${image_name}:${version}
-	popd
 done
 
 echo "Done!"
