@@ -7,6 +7,7 @@ FROM metabrainz/consul-template-base:noble-1.0.2-v0.1-1
 ENV PATH=/usr/local/bin:$PATH
 
 # runtime dependencies
+# Require the Ubuntu eMudhra/emSign distrust update (or newer).
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
@@ -14,6 +15,7 @@ RUN set -eux; \
 		netbase \
 		tzdata \
 	; \
+	dpkg --compare-versions "$(dpkg-query -W -f='${Version}' ca-certificates)" ge 20260816ubuntu0.24.04.1; \
 	rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305

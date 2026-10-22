@@ -15,13 +15,16 @@ ENV PATH /usr/local/bin:$PATH
 ENV LANG C.UTF-8
 
 # runtime dependencies
+# Require the Ubuntu eMudhra/emSign distrust update (or newer).
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
+		ca-certificates \
 		libbluetooth-dev \
 		tk-dev \
 		uuid-dev \
 	; \
+	dpkg --compare-versions "$(dpkg-query -W -f='${Version}' ca-certificates)" ge 20260816ubuntu0.22.04.1; \
 	rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY A035C8C19219BA821ECEA86B64E628F8D684696D
