@@ -30,11 +30,12 @@ remote_tags=($(wget -q \
 	https://registry.hub.docker.com/v2/repositories/${image_name}/tags?page_size=100 \
 	-O - | jq -r '.results[] | .name'))
 
-for version in 3.10 3.11 3.12 3.13 3.14
+for version in 3.11 3.12 3.13 3.14
 do
 	pushd "$(dirname "${BASH_SOURCE[0]}")/${version}/"
 	echo "Building ${version}..."
-	${DOCKER_CMD} build -t ${image_name}:${version} .
+	# Refresh the base image and package layers for every release.
+	${DOCKER_CMD} build --pull --no-cache -t ${image_name}:${version} .
 	created=$(${DOCKER_CMD} inspect -f '{{.Created}}' ${image_name}:${version} \
 		| sed 's/^\(....\)-\(..\)-\(..\)T.*$/\1\2\3/')
 	date_version=${version}-${created}

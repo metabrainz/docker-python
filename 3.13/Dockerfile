@@ -7,6 +7,7 @@ FROM metabrainz/consul-template-base:noble-1.0.2-v0.1-1
 ENV PATH=/usr/local/bin:$PATH
 
 # runtime dependencies
+# Require the Ubuntu eMudhra/emSign distrust update (or newer).
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
@@ -14,6 +15,7 @@ RUN set -eux; \
 		netbase \
 		tzdata \
 	; \
+	dpkg --compare-versions "$(dpkg-query -W -f='${Version}' ca-certificates)" ge 20260816ubuntu0.24.04.1; \
 	rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305
@@ -144,3 +146,22 @@ RUN set -eux; \
 		[ ! -e "/usr/local/bin/$dst" ]; \
 		ln -svT "$src" "/usr/local/bin/$dst"; \
 	done
+
+ENV PYTHON_PIP_VERSION=26.2.2
+
+# Upgrade pip separately from Python to fix its vendored CA bundle.
+# Use the advisory's hash-pinned wheel to secure the bootstrap download.
+# https://discuss.python.org/t/109576
+# Keep the verified wheel for offline bootstrapping of new virtual environments.
+RUN set -eux; \
+	export PYTHONDONTWRITEBYTECODE=1; \
+	wheel_dir="$(python -c 'import ensurepip; from pathlib import Path; print(Path(ensurepip.__file__).parent / "_bundled")')"; \
+	python -m pip download --disable-pip-version-check --no-cache-dir --no-deps \
+		--dest "$wheel_dir" \
+		"pip @ https://files.pythonhosted.org/packages/3f/06/3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f/pip-${PYTHON_PIP_VERSION}-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70"; \
+	python -m pip install --disable-pip-version-check --no-cache-dir --no-compile --no-index \
+		"$wheel_dir/pip-$PYTHON_PIP_VERSION-py3-none-any.whl"; \
+	find "$wheel_dir" -name 'pip-*.whl' ! -name "pip-$PYTHON_PIP_VERSION-py3-none-any.whl" -delete; \
+	sed -i "s/^_PIP_VERSION = .*/_PIP_VERSION = \"$PYTHON_PIP_VERSION\"/" "$wheel_dir/../__init__.py"; \
+	python -c 'import ensurepip, os; assert ensurepip.version() == os.environ["PYTHON_PIP_VERSION"]'; \
+	python -m pip --version

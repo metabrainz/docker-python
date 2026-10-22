@@ -31,6 +31,12 @@ See the [list of image tags available on Docker Hub|https://hub.docker.com/r/met
 
 Use [`push.sh`](push.sh) script.  The way it operates is detailed in its heading comments.
 
+Release builds use `--pull --no-cache` to refresh base images and installed packages.
+Each Dockerfile requires at least the `ca-certificates` version containing
+[Ubuntu’s eMudhra/emSign distrust update](https://ubuntu.com/blog/emudhra-ca-compromise-fixes-available):
+`20260816ubuntu0.22.04.1` for Jammy and `20260816ubuntu0.24.04.1` for Noble.
+A build fails if its package repositories cannot supply that version or newer.
+
 ## Available images
 
 We have these images available:

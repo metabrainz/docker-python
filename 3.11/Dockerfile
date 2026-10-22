@@ -15,13 +15,16 @@ ENV PATH /usr/local/bin:$PATH
 ENV LANG C.UTF-8
 
 # runtime dependencies
+# Require the Ubuntu eMudhra/emSign distrust update (or newer).
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
+		ca-certificates \
 		libbluetooth-dev \
 		tk-dev \
 		uuid-dev \
 	; \
+	dpkg --compare-versions "$(dpkg-query -W -f='${Version}' ca-certificates)" ge 20260816ubuntu0.22.04.1; \
 	rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY A035C8C19219BA821ECEA86B64E628F8D684696D
@@ -120,28 +123,25 @@ RUN set -eux; \
 		ln -svT "$src" "/usr/local/bin/$dst"; \
 	done
 
-# if this is called "PIP_VERSION", pip explodes with "ValueError: invalid truth value '<VERSION>'"
-ENV PYTHON_PIP_VERSION 23.2.1
-# https://github.com/docker-library/python/issues/365
+ENV PYTHON_PIP_VERSION 26.2.2
 ENV PYTHON_SETUPTOOLS_VERSION 68.2.2
-# https://github.com/pypa/get-pip
-ENV PYTHON_GET_PIP_URL https://github.com/pypa/get-pip/raw/9af82b715db434abb94a0a6f3569f43e72157346/public/get-pip.py
-ENV PYTHON_GET_PIP_SHA256 45a2bb8bf2bb5eff16fdd00faef6f29731831c7c59bd9fc2bf1f3bed511ff1fe
 
+# Upgrade pip separately from Python to fix its vendored CA bundle.
+# Use the advisory's hash-pinned wheel to secure the bootstrap download.
+# https://discuss.python.org/t/109576
+# Keep the verified wheel for offline bootstrapping of new virtual environments.
 RUN set -eux; \
-	\
-	wget -O get-pip.py "$PYTHON_GET_PIP_URL"; \
-	echo "$PYTHON_GET_PIP_SHA256 *get-pip.py" | sha256sum -c -; \
-	\
 	export PYTHONDONTWRITEBYTECODE=1; \
-	\
-	python get-pip.py \
-		--disable-pip-version-check \
-		--no-cache-dir \
-		--no-compile \
-		"pip==$PYTHON_PIP_VERSION" \
-		"setuptools==$PYTHON_SETUPTOOLS_VERSION" \
-	; \
-	rm -f get-pip.py; \
-	\
-	pip --version
+	python -m ensurepip --default-pip; \
+	wheel_dir="$(python -c 'import ensurepip; from pathlib import Path; print(Path(ensurepip.__file__).parent / "_bundled")')"; \
+	python -m pip download --disable-pip-version-check --no-cache-dir --no-deps \
+		--dest "$wheel_dir" \
+		"pip @ https://files.pythonhosted.org/packages/3f/06/3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f/pip-${PYTHON_PIP_VERSION}-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70"; \
+	python -m pip install --disable-pip-version-check --no-cache-dir --no-compile --no-index \
+		"$wheel_dir/pip-$PYTHON_PIP_VERSION-py3-none-any.whl"; \
+	find "$wheel_dir" -name 'pip-*.whl' ! -name "pip-$PYTHON_PIP_VERSION-py3-none-any.whl" -delete; \
+	sed -i "s/^_PIP_VERSION = .*/_PIP_VERSION = \"$PYTHON_PIP_VERSION\"/" "$wheel_dir/../__init__.py"; \
+	python -c 'import ensurepip, os; assert ensurepip.version() == os.environ["PYTHON_PIP_VERSION"]'; \
+	python -m pip install --disable-pip-version-check --no-cache-dir --no-compile \
+		"setuptools==$PYTHON_SETUPTOOLS_VERSION" wheel; \
+	python -m pip --version
