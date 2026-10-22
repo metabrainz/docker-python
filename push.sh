@@ -34,11 +34,10 @@ remote_tags=($(wget -q \
 # Older Python versions use a metabrainz/consul-template-base tag that is
 # not available for linux/arm64; build them for linux/amd64 only.
 declare -A build_args=()
-build_args["3.10"]='--amd-only'
 build_args["3.11"]='--amd-only'
 build_args["3.12"]='--amd-only'
 
-for version in 3.10 3.11 3.12 3.13 3.14
+for version in 3.11 3.12 3.13 3.14
 do
 	# shellcheck disable=SC2086
 	./build.sh --push ${build_args[$version]:-} "${version}"

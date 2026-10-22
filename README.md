@@ -37,8 +37,6 @@ We have these images available:
 
 image tags | python version | consul-template version | ubuntu version | architectures
 ----|----|----|----|----
-3.10-20220315 | 3.10.2 | 0.27.1 | focal | amd64
-3.10, 3.10-20261106 | 3.10.2 | 0.27.1 | focal | amd64
 3.11-20221221 | 3.11.1 | 0.27.1 | focal | amd64
 3.11-20231006 | 3.11.6 | 0.33.0 | jammy | amd64
 3.11-20261022 | 3.11.6 | 0.33.0 | jammy | amd64
