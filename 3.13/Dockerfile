@@ -144,3 +144,12 @@ RUN set -eux; \
 		[ ! -e "/usr/local/bin/$dst" ]; \
 		ln -svT "$src" "/usr/local/bin/$dst"; \
 	done
+
+# Upgrade pip separately from Python to fix its vendored CA bundle.
+# Use the advisory's hash-pinned wheel to secure the bootstrap download.
+# https://discuss.python.org/t/109576
+RUN set -eux; \
+	export PYTHONDONTWRITEBYTECODE=1; \
+	python -m pip install --disable-pip-version-check --no-cache-dir --no-compile \
+		"pip @ https://files.pythonhosted.org/packages/3f/06/3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f/pip-26.2.2-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70"; \
+	python -m pip --version
