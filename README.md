@@ -35,13 +35,23 @@ Use [`push.sh`](push.sh) script.  The way it operates is detailed in its heading
 
 We have these images available:
 
-image version | python version | consul-template version | ubuntu version
-----|----|----|----
-3.10, 3.10-20220315 | 3.10.2 | 0.27.1 | focal
-3.11, 3.11-20221221 | 3.11.1 | 0.27.1 | focal
-3.11-20231006 | 3.11.6 | 0.33.0 | jammy
-3.12-20241130 | 3.12.7 | 0.39.1 | jammy
-3.13-20250616 | 3.13.5 | 0.40.0 | noble
-3.13-20260216 | 3.13.12 | 0.41.4 | noble
-3.14-20260513 | 3.14.5 | 0.42.0 | noble
-3.14-20260730 | 3.14.6 | 0.42.0 | noble
+image tags | python version | consul-template version | ubuntu version | architectures
+----|----|----|----|----
+3.10-20220315 | 3.10.2 | 0.27.1 | focal | amd64
+3.10, 3.10-20261106 | 3.10.2 | 0.27.1 | focal | amd64
+3.11-20221221 | 3.11.1 | 0.27.1 | focal | amd64
+3.11-20231006 | 3.11.6 | 0.33.0 | jammy | amd64
+3.11-20261022 | 3.11.6 | 0.33.0 | jammy | amd64
+3.11, 3.11-20261106 | 3.11.6 | 0.33.0 | jammy | amd64
+3.12-20241130 | 3.12.7 | 0.39.1 | jammy | amd64
+3.12-20261022 | 3.12.7 | 0.39.1 | jammy | amd64
+3.12, 3.12-20261106 | 3.12.7 | 0.39.1 | jammy | amd64
+3.13-20250313 | 3.13.2 | 0.40.0 | noble | amd64
+3.13-20250616 | 3.13.5 | 0.40.0 | noble | amd64
+3.13-20260216 | 3.13.12 | 0.41.4 | noble | amd64
+3.13-20261022 | 3.13.12 | 0.41.4 | noble | amd64
+3.13, 3.13-20261106 | 3.13.12 | 0.42.0 | noble | amd64, arm64
+3.14-20260513 | 3.14.5 | 0.42.0 | noble | amd64
+3.14-20260730 | 3.14.6 | 0.42.0 | noble | amd64
+3.14-20261022 | 3.14.6 | 0.42.0 | noble | amd64
+3.14, 3.14-20261106 | 3.14.6 | 0.42.0 | noble | amd64, arm64
