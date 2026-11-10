@@ -1,14 +1,18 @@
-FROM metabrainz/consul-template-base:jammy-1.0.4-v0.1-1
+FROM metabrainz/consul-template-base:resolute-1.0.22-v0.1-1
 
 # This Dockerfile is based on
-# https://github.com/docker-library/python/blob/37a6827/3.12/slim-bookworm/Dockerfile
+# https://github.com/docker-library/python/blob/3d7e95597e56a415d9e4abc0f15877e005d2cb2e/3.12/slim-trixie/Dockerfile
 
 # ensure local python is preferred over distribution python
 ENV PATH /usr/local/bin:$PATH
 
 # cannot remove LANG even though https://bugs.python.org/issue19846 is fixed
+# - embedded interpreters (uWSGI, mod_wsgi, etc) skip locale coercion and UTF-8 mode before Python 3.15, so they fall back to ASCII
+# - musl (alpine) never gets LC_CTYPE set, so anything that reads locale environment variables (babel) finds none
 # last attempted removal of LANG broke many users:
 # https://github.com/docker-library/python/pull/570
+# embedded interpreter reproducer (fails with UnicodeEncodeError without LANG on 3.14 and earlier, needs a non-slim Debian variant for gcc):
+# docker run --rm --env LANG= python:3.12 sh -c 'printf "#include <Python.h>\nint main(){Py_Initialize();PyRun_SimpleString(\"print(chr(252),flush=True)\");}" | gcc -x c - $(python3-config --embed --cflags --ldflags) && ./a.out'
 ENV LANG C.UTF-8
 
 # runtime dependencies
@@ -19,11 +23,11 @@ RUN set -eux; \
 		netbase \
 		tzdata \
 	; \
-	rm -rf /var/lib/apt/lists/*
+	apt-get dist-clean
 
 ENV GPG_KEY 7169605F62C751356D054A26A821E680E5FA6305
-ENV PYTHON_VERSION 3.12.7
-ENV PYTHON_SHA256 24887b92e2afd4a2ac602419ad4b596372f67ac9b077190f459aba390faf5550
+ENV PYTHON_VERSION 3.12.16
+ENV PYTHON_SHA256 b5796915dc45ff745cfb4e990a7e7c93d6f546328a102ce31448d69ebc37575c
 
 RUN set -eux; \
 	\
@@ -31,6 +35,7 @@ RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		dpkg-dev \
+		g++ \
 		gcc \
 		gnupg \
 		libbluetooth-dev \
@@ -72,13 +77,31 @@ RUN set -eux; \
 		--enable-optimizations \
 		--enable-option-checking=fatal \
 		--enable-shared \
-		--with-lto \
+		$(test "${gnuArch%%-*}" != 'riscv64' && echo '--with-lto') \
 		--with-ensurepip \
 	; \
 	nproc="$(nproc)"; \
 	EXTRA_CFLAGS="$(dpkg-buildflags --get CFLAGS)"; \
 	LDFLAGS="$(dpkg-buildflags --get LDFLAGS)"; \
-	LDFLAGS="${LDFLAGS:--Wl},--strip-all"; \
+	LDFLAGS="${LDFLAGS:-} -Wl,--strip-all"; \
+	arch="$(dpkg --print-architecture)"; arch="${arch##*-}"; \
+# https://docs.python.org/3.12/howto/perf_profiling.html
+# https://github.com/docker-library/python/pull/1000#issuecomment-2597021615
+	case "$arch" in \
+		amd64|arm64) \
+			# only add "-mno-omit-leaf" on arches that support it
+			# https://gcc.gnu.org/onlinedocs/gcc-14.2.0/gcc/x86-Options.html#index-momit-leaf-frame-pointer-2
+			# https://gcc.gnu.org/onlinedocs/gcc-14.2.0/gcc/AArch64-Options.html#index-momit-leaf-frame-pointer
+			EXTRA_CFLAGS="${EXTRA_CFLAGS:-} -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"; \
+			;; \
+		i386) \
+			# don't enable frame-pointers on 32bit x86 due to performance drop.
+			;; \
+		*) \
+			# other arches don't support "-mno-omit-leaf"
+			EXTRA_CFLAGS="${EXTRA_CFLAGS:-} -fno-omit-frame-pointer"; \
+			;; \
+	esac; \
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
 		"LDFLAGS=${LDFLAGS:-}" \
@@ -88,7 +111,7 @@ RUN set -eux; \
 	rm python; \
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
-		"LDFLAGS=${LDFLAGS:--Wl},-rpath='\$\$ORIGIN/../lib'" \
+		"LDFLAGS=${LDFLAGS:-} -Wl,-rpath='\$\$ORIGIN/../lib'" \
 		python \
 	; \
 	make install; \
@@ -110,13 +133,14 @@ RUN set -eux; \
 	find /usr/local -type f -executable -not \( -name '*tkinter*' \) -exec ldd '{}' ';' \
 		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
 		| sort -u \
-		| xargs -r dpkg-query --search \
-		| cut -d: -f1 \
+		| xargs -rt dpkg-query --search \
+# https://manpages.debian.org/bookworm/dpkg/dpkg-query.1.en.html#S (we ignore diversions and it'll be really unusual for more than one package to provide any given .so file)
+		| awk 'sub(":$", "", $1) { print $1 }' \
 		| sort -u \
 		| xargs -r apt-mark manual \
 	; \
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	rm -rf /var/lib/apt/lists/*; \
+	apt-get dist-clean; \
 	\
 	export PYTHONDONTWRITEBYTECODE=1; \
 	python3 --version; \

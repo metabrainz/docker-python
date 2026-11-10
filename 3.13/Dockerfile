@@ -1,10 +1,19 @@
-FROM metabrainz/consul-template-base:noble-1.0.2-v0.3-2
+FROM metabrainz/consul-template-base:resolute-1.0.22-v0.1-1
 
 # This Dockerfile is based on
-# https://github.com/docker-library/python/blob/719683e893c4b63cd9133d4c12ae33790ac1abec/3.13/slim-bookworm/Dockerfile
+# https://github.com/docker-library/python/blob/152874b138f0b1c4699fbdcb52b174608cfbfff5/3.13/slim-trixie/Dockerfile
 
 # ensure local python is preferred over distribution python
-ENV PATH=/usr/local/bin:$PATH
+ENV PATH /usr/local/bin:$PATH
+
+# cannot remove LANG even though https://bugs.python.org/issue19846 is fixed
+# - embedded interpreters (uWSGI, mod_wsgi, etc) skip locale coercion and UTF-8 mode before Python 3.15, so they fall back to ASCII
+# - musl (alpine) never gets LC_CTYPE set, so anything that reads locale environment variables (babel) finds none
+# last attempted removal of LANG broke many users:
+# https://github.com/docker-library/python/pull/570
+# embedded interpreter reproducer (fails with UnicodeEncodeError without LANG on 3.14 and earlier, needs a non-slim Debian variant for gcc):
+# docker run --rm --env LANG= python:3.13 sh -c 'printf "#include <Python.h>\nint main(){Py_Initialize();PyRun_SimpleString(\"print(chr(252),flush=True)\");}" | gcc -x c - $(python3-config --embed --cflags --ldflags) && ./a.out'
+ENV LANG C.UTF-8
 
 # runtime dependencies
 RUN set -eux; \
@@ -14,11 +23,11 @@ RUN set -eux; \
 		netbase \
 		tzdata \
 	; \
-	rm -rf /var/lib/apt/lists/*
+	apt-get dist-clean
 
-ENV GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305
-ENV PYTHON_VERSION=3.13.12
-ENV PYTHON_SHA256=2a84cd31dd8d8ea8aaff75de66fc1b4b0127dd5799aa50a64ae9a313885b4593
+ENV GPG_KEY 7169605F62C751356D054A26A821E680E5FA6305
+ENV PYTHON_VERSION 3.13.18
+ENV PYTHON_SHA256 abb0102e6d4ae027509bcb82327d9dd85515b44a3ba8ad538cfc5e9847029f68
 
 RUN set -eux; \
 	\
@@ -26,6 +35,7 @@ RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		dpkg-dev \
+		g++ \
 		gcc \
 		gnupg \
 		libbluetooth-dev \
@@ -130,7 +140,7 @@ RUN set -eux; \
 		| xargs -r apt-mark manual \
 	; \
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	rm -rf /var/lib/apt/lists/*; \
+	apt-get dist-clean; \
 	\
 	export PYTHONDONTWRITEBYTECODE=1; \
 	python3 --version; \

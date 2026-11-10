@@ -13,15 +13,10 @@ set -e -o pipefail -u
 
 SCRIPT_NAME=$(basename "$0")
 HELP=$(cat <<EOH
-Usage: $SCRIPT_NAME [--help|--amd-only|--local-platform|--push] <python-version>
+Usage: $SCRIPT_NAME [--help|--local-platform|--push] <python-version>
 
 Options:
   --help                Print this help message
-
-  --amd-only            Build image for linux/amd64 only.
-                        This is only for older Python versions whose
-                        Dockerfile uses a metabrainz/consul-template-base
-                        tag that is not available for linux/arm64.
 
   --local-platform      Build image to run on the host platform only.
                         This is intended for local development and testing,
@@ -50,9 +45,6 @@ version=''
 for arg in "$@"
 do
   case $arg in
-    "--amd-only")
-      platform_option='--platform linux/amd64'
-      ;;
     "--help")
       echo "$HELP"
       exit 0 # EX_OK

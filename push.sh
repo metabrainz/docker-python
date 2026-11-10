@@ -31,26 +31,13 @@ remote_tags=($(wget -q \
 	https://registry.hub.docker.com/v2/repositories/${image_name}/tags?page_size=100 \
 	-O - | jq -r '.results[] | .name'))
 
-# Older Python versions use a metabrainz/consul-template-base tag that is
-# not available for linux/arm64; build them for linux/amd64 only.
-declare -A build_args=()
-build_args["3.11"]='--amd-only'
-build_args["3.12"]='--amd-only'
-
 for version in 3.11 3.12 3.13 3.14
 do
-	# shellcheck disable=SC2086
-	./build.sh --push ${build_args[$version]:-} "${version}"
-	# For a multi-platform image, `imagetools inspect` has one image config
+	./build.sh --push "${version}"
+	# Images are multi-platform, so `imagetools inspect` has one image config
 	# per platform; read the linux/amd64 one.
-	if [[ ${build_args[$version]:-} == '--amd-only' ]]
-	then
-		image_config='.Image'
-	else
-		image_config='(index .Image "linux/amd64")'
-	fi
 	created=$(${DOCKER_CMD} buildx imagetools inspect \
-		--format "{{${image_config}.Created.Format \"20060102\"}}" \
+		--format '{{(index .Image "linux/amd64").Created.Format "20060102"}}' \
 		"${image_name}:${version}")
 	date_version=${version}-${created}
 	if [[ " ${remote_tags[*]} " == *" ${date_version} "* ]]

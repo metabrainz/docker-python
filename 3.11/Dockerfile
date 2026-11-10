@@ -1,42 +1,47 @@
-FROM metabrainz/consul-template-base:ct_0.33.0-jammy-1.0.1-v0.4-1
+FROM metabrainz/consul-template-base:resolute-1.0.22-v0.1-1
 
 # This Dockerfile is based on
-# https://github.com/docker-library/python/blob/f5b7b5a332bd4d2c1518325ab9647b09bf07412f/3.11/bullseye/Dockerfile
-# and
-# https://github.com/metabrainz/docker-python/blob/680b0c84ce0053800a292d7f2c5af41bae3385dc/3.10/Dockerfile
-# As of the python 3.11 version of the Dockerfile in docker-library, it no longer installs build packages
-# and then uninstalls them after building and installing python. Copy this logic from our previous builds.
+# https://github.com/docker-library/python/blob/83054588043b3a7ac1ce8324c9242164b632beb9/3.11/slim-trixie/Dockerfile
 
-# Ensure that local Python build is preferred over whatever might come with the base image
+# ensure local python is preferred over distribution python
 ENV PATH /usr/local/bin:$PATH
 
-# http://bugs.python.org/issue19846
-# > At the moment, setting "LANG=C" on a Linux system *fundamentally breaks Python 3*, and that's not OK.
+# cannot remove LANG even though https://bugs.python.org/issue19846 is fixed
+# - embedded interpreters (uWSGI, mod_wsgi, etc) skip locale coercion and UTF-8 mode before Python 3.15, so they fall back to ASCII
+# - musl (alpine) never gets LC_CTYPE set, so anything that reads locale environment variables (babel) finds none
+# last attempted removal of LANG broke many users:
+# https://github.com/docker-library/python/pull/570
+# embedded interpreter reproducer (fails with UnicodeEncodeError without LANG on 3.14 and earlier, needs a non-slim Debian variant for gcc):
+# docker run --rm --env LANG= python:3.11 sh -c 'printf "#include <Python.h>\nint main(){Py_Initialize();PyRun_SimpleString(\"print(chr(252),flush=True)\");}" | gcc -x c - $(python3-config --embed --cflags --ldflags) && ./a.out'
 ENV LANG C.UTF-8
 
 # runtime dependencies
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		libbluetooth-dev \
-		tk-dev \
-		uuid-dev \
+		ca-certificates \
+		netbase \
+		tzdata \
 	; \
-	rm -rf /var/lib/apt/lists/*
+	apt-get dist-clean
 
 ENV GPG_KEY A035C8C19219BA821ECEA86B64E628F8D684696D
-ENV PYTHON_VERSION 3.11.6
+ENV PYTHON_VERSION 3.11.18
+ENV PYTHON_SHA256 9120e0a653868f6e3698d36cdd99e5a58903ec9469e448f21d98f7b16d8fa290
 
 RUN set -eux; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
-	apt-get update && apt-get install -y --no-install-recommends \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
 		dpkg-dev \
+		g++ \
 		gcc \
+		gnupg \
 		libbluetooth-dev \
 		libbz2-dev \
 		libc6-dev \
-		libexpat1-dev \
+		libdb-dev \
 		libffi-dev \
 		libgdbm-dev \
 		liblzma-dev \
@@ -50,14 +55,15 @@ RUN set -eux; \
 		wget \
 		xz-utils \
 		zlib1g-dev \
-		$(command -v gpg > /dev/null || echo 'gnupg dirmngr'); \
+	; \
 	\
 	wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz"; \
+	echo "$PYTHON_SHA256 *python.tar.xz" | sha256sum -c -; \
 	wget -O python.tar.xz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc"; \
 	GNUPGHOME="$(mktemp -d)"; export GNUPGHOME; \
 	gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys "$GPG_KEY"; \
 	gpg --batch --verify python.tar.xz.asc python.tar.xz; \
-	command -v gpgconf > /dev/null && gpgconf --kill all || :; \
+	gpgconf --kill all; \
 	rm -rf "$GNUPGHOME" python.tar.xz.asc; \
 	mkdir -p /usr/src/python; \
 	tar --extract --directory /usr/src/python --strip-components=1 --file python.tar.xz; \
@@ -71,20 +77,26 @@ RUN set -eux; \
 		--enable-optimizations \
 		--enable-option-checking=fatal \
 		--enable-shared \
-		--with-lto \
-		--with-system-expat \
-		--without-ensurepip \
+		$(test "${gnuArch%%-*}" != 'riscv64' && echo '--with-lto') \
+		--with-ensurepip \
 	; \
 	nproc="$(nproc)"; \
+	EXTRA_CFLAGS="$(dpkg-buildflags --get CFLAGS)"; \
+	LDFLAGS="$(dpkg-buildflags --get LDFLAGS)"; \
+	LDFLAGS="${LDFLAGS:-} -Wl,--strip-all"; \
 	make -j "$nproc" \
+		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
+		"LDFLAGS=${LDFLAGS:-}" \
+	; \
+# https://github.com/docker-library/python/issues/784
+# prevent accidental usage of a system installed libpython of the same version
+	rm python; \
+	make -j "$nproc" \
+		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
+		"LDFLAGS=${LDFLAGS:-} -Wl,-rpath='\$\$ORIGIN/../lib'" \
+		python \
 	; \
 	make install; \
-	\
-# enable GDB to load debugging data: https://github.com/docker-library/python/pull/701
-	bin="$(readlink -ve /usr/local/bin/python3)"; \
-	dir="$(dirname "$bin")"; \
-	mkdir -p "/usr/share/gdb/auto-load/$dir"; \
-	cp -vL Tools/gdb/libpython.py "/usr/share/gdb/auto-load/$bin-gdb.py"; \
 	\
 	cd /; \
 	rm -rf /usr/src/python; \
@@ -97,51 +109,38 @@ RUN set -eux; \
 	; \
 	\
 	ldconfig; \
+	\
 	apt-mark auto '.*' > /dev/null; \
 	apt-mark manual $savedAptMark; \
 	find /usr/local -type f -executable -not \( -name '*tkinter*' \) -exec ldd '{}' ';' \
-		| awk '/=>/ { print $(NF-1) }' \
+		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
 		| sort -u \
-		| xargs -r dpkg-query --search \
-		| cut -d: -f1 \
+		| xargs -rt dpkg-query --search \
+# https://manpages.debian.org/bookworm/dpkg/dpkg-query.1.en.html#S (we ignore diversions and it'll be really unusual for more than one package to provide any given .so file)
+		| awk 'sub(":$", "", $1) { print $1 }' \
 		| sort -u \
-		| xargs -r apt-mark manual; \
+		| xargs -r apt-mark manual \
+	; \
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	rm -rf /var/lib/apt/lists/*; \
+	apt-get dist-clean; \
 	\
-	python3 --version
+	export PYTHONDONTWRITEBYTECODE=1; \
+	python3 --version; \
+	\
+	pip3 install \
+		--disable-pip-version-check \
+		--no-cache-dir \
+		--no-compile \
+		'setuptools==79.0.1' \
+		'wheel==0.46.3' \
+	; \
+	pip3 --version
 
 # make some useful symlinks that are expected to exist ("/usr/local/bin/python" and friends)
 RUN set -eux; \
-	for src in idle3 pydoc3 python3 python3-config; do \
+	for src in idle3 pip3 pydoc3 python3 python3-config; do \
 		dst="$(echo "$src" | tr -d 3)"; \
 		[ -s "/usr/local/bin/$src" ]; \
 		[ ! -e "/usr/local/bin/$dst" ]; \
 		ln -svT "$src" "/usr/local/bin/$dst"; \
 	done
-
-# if this is called "PIP_VERSION", pip explodes with "ValueError: invalid truth value '<VERSION>'"
-ENV PYTHON_PIP_VERSION 23.2.1
-# https://github.com/docker-library/python/issues/365
-ENV PYTHON_SETUPTOOLS_VERSION 68.2.2
-# https://github.com/pypa/get-pip
-ENV PYTHON_GET_PIP_URL https://github.com/pypa/get-pip/raw/9af82b715db434abb94a0a6f3569f43e72157346/public/get-pip.py
-ENV PYTHON_GET_PIP_SHA256 45a2bb8bf2bb5eff16fdd00faef6f29731831c7c59bd9fc2bf1f3bed511ff1fe
-
-RUN set -eux; \
-	\
-	wget -O get-pip.py "$PYTHON_GET_PIP_URL"; \
-	echo "$PYTHON_GET_PIP_SHA256 *get-pip.py" | sha256sum -c -; \
-	\
-	export PYTHONDONTWRITEBYTECODE=1; \
-	\
-	python get-pip.py \
-		--disable-pip-version-check \
-		--no-cache-dir \
-		--no-compile \
-		"pip==$PYTHON_PIP_VERSION" \
-		"setuptools==$PYTHON_SETUPTOOLS_VERSION" \
-	; \
-	rm -f get-pip.py; \
-	\
-	pip --version
